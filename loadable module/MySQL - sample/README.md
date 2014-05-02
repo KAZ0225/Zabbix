@@ -67,7 +67,7 @@ LoadModulePathとLoadModuleを設定します。
 LoadModulePathはローダブルモジュールの配置先  
 LoadModuleはコンパイルしてできたオブジェクトファイル名  
 
-========= /etc/zabbix/zabbix_agent.conf 修正例 ==============  
+========= /etc/zabbix/zabbix_agentd.conf 修正例 ==============  
 
     --略--  
     ####### LOADABLE MODULES #######  
