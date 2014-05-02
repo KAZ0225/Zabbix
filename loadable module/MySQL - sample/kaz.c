@@ -537,9 +537,9 @@ int	zbx_module_get_mysql(AGENT_REQUEST *request, AGENT_RESULT *result)
 				break;
 			}
 			break;
+			ret = SYSINFO_RET_OK;
 		}
 	}
-	ret = SYSINFO_RET_OK;
 
 end:
 	return ret;
