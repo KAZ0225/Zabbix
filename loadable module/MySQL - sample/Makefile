@@ -1,2 +1,6 @@
 kaz: kaz.c
-	gcc -shared -o kaz.so kaz.c -I../../../include -fPIC -L/usr/lib64/mysql -lmysqlclient
+	gcc -shared -o kaz.so kaz.c \
+		-fPIC \
+		-I../../../include \
+		-L/usr/lib64/mysql \
+		-lmysqlclient
