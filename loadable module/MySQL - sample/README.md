@@ -42,20 +42,26 @@ Intervalに0を設定すると接続のたびにSQLを発行し、値を取得�
 実行するとこんな感じの表示が出ます。
 
     ]# make
-    gcc -shared -o kaz.so kaz.c \
-    		-fPIC \  
-    		-I../../../include \  
-    		-L/usr/lib64/mysql \  
-    		-lmysqlclient  
+    gcc -shared -fPIC \
+    		-W -Wall -Wformat=2 -Wcast-qual -Wcast-align -Wwrite-strings -Wconversion -Wfloat-equal -Wpointer-arith \
+    		-o kaz.so kaz.c \
+    		-I../../../include \
+    		-L/usr/lib64/mysql \
+    		-lmysqlclient
+    kaz.c:48: 警告: initialization discards qualifiers from pointer target type
+    kaz.c:48: 警告: initialization discards qualifiers from pointer target type
 
 エラーの場合はこんな感じにエラーが出ます。  
 
     ]# make  
-    gcc -shared -o kaz.so kaz.c \  
-    		-fPIC \  
-    		-I../../../include \  
-    		-L/usr/lib64/mysql \  
-    		-lmysqlclient  
+    gcc -shared -fPIC \
+    		-W -Wall -Wformat=2 -Wcast-qual -Wcast-align -Wwrite-strings -Wconversion -Wfloat-equal -Wpointer-arith \
+    		-o kaz.so kaz.c \
+    		-I../../../include \
+    		-L/usr/lib64/mysql \
+    		-lmysqlclient
+    kaz.c:48: 警告: initialization discards qualifiers from pointer target type
+    kaz.c:48: 警告: initialization discards qualifiers from pointer target type
     kaz.c: In function ‘zbx_module_trim’:  
     kaz.c:822: error: expected ‘;’ before ‘}’ token  
     make: *** [kaz] エラー 1  

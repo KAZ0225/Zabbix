@@ -28,17 +28,25 @@
 #define	LM_TYPE_STR	0
 #define	LM_TYPE_INT	1
 #define	LM_TYPE_FLOAT	2
+#define	LM_TYPE_NONE	99
 
 /* the variable keeps timeout setting for item processing */
 static int	item_timeout = 0;
 
 int	zbx_module_get_mysql(AGENT_REQUEST *request, AGENT_RESULT *result);
+int	zbx_module_init_configure();
+int	zbx_module_get_configure();
+int	zbx_module_init_db();
+int	zbx_module_exec_sql();
+int	zbx_module_close_db();
+int	zbx_module_set_configure(char*);
+int	zbx_module_trim(char*);
 
 static ZBX_METRIC keys[] =
 /*	KEY		FLAG		FUNCTION		TEST PARAMETERS */
 {
 	{"kaz.mysql",	CF_HAVEPARAMS,	zbx_module_get_mysql,	"Connections"},
-	{NULL}
+	{NULL,		0x00,		NULL,			NULL}
 };
 
 /* time */
@@ -47,20 +55,20 @@ int	execution_interval;
 
 /* mysql */
 typedef struct {
-	MYSQL	*conn;
-	char	*server;
-	char	*account;
-	char	*password;
-	char	*database;
-	int	port;
+	MYSQL		*conn;
+	char		*server;
+	char		*account;
+	char		*password;
+	char		*database;
+	unsigned int	port;
 } ZBX_MYSQL_INFO;
 
 ZBX_MYSQL_INFO	zbx_mi;
 
 /* configure */
 struct lm_cfg_line {
-	char	*parameter;
-	char	*def;
+	const char	*parameter;
+	const char	*def;
 };
 
 struct lm_cfg_line	lm_cfg[] =	{
@@ -71,14 +79,14 @@ struct lm_cfg_line	lm_cfg[] =	{
 	{"Database",	"zabbix"},
 	{"Port",	"3306"},
 	{"Interval",	"300"},
-	{NULL}
+	{NULL,		NULL}
 };
 
 /* value */
 struct lm_get_values {
-	char	*keyword;
-	int	type;
-	char	*value;
+	const char	*keyword;
+	int		type;
+	char		*value;
 };
 
 struct lm_get_values	lm_gv[] =	{
@@ -374,7 +382,7 @@ struct lm_get_values	lm_gv[] =	{
 	{"Threads_running",			LM_TYPE_INT,    NULL},
 	{"Uptime",				LM_TYPE_INT,    NULL},
 	{"Uptime_since_flush_status",		LM_TYPE_INT,    NULL},
-	{NULL}
+	{NULL,					LM_TYPE_NONE,	NULL}
 };
 
 /******************************************************************************
@@ -493,6 +501,7 @@ int	zbx_module_get_mysql(AGENT_REQUEST *request, AGENT_RESULT *result)
 	int	i, ret = SYSINFO_RET_FAIL;
 	char	*c_keyword, *error;
 	long	n;
+	float	f;
 
 	// parameter check
 	if (request->nparam != 1) {
@@ -525,9 +534,9 @@ int	zbx_module_get_mysql(AGENT_REQUEST *request, AGENT_RESULT *result)
 				}
 				break;
 			case LM_TYPE_FLOAT:
-				n = strtof(lm_gv[i].value, &error);
+				f = strtof(lm_gv[i].value, &error);
 				if (*error == '\0') {
-					SET_DBL_RESULT(result, n);
+					SET_DBL_RESULT(result, f);
 					ret = SYSINFO_RET_OK;
 				}
 				break;
@@ -591,10 +600,12 @@ int	zbx_module_init_db()
  ******************************************************************************/
 int	zbx_module_exec_sql()
 {
-	int		i, j, row_count, ret = SYSINFO_RET_FAIL;
+	int		i, ret = SYSINFO_RET_FAIL;
+	unsigned int	j;
 
 	MYSQL_RES	*res;
 	MYSQL_ROW	row;
+	my_ulonglong	row_count;
 
 	// execute query
 	if (mysql_query(zbx_mi.conn, "show status;")) {
@@ -685,7 +696,7 @@ int zbx_module_init_configure()
 	strcpy(str, lm_cfg[3].def);
 	zbx_mi.database	= str;
 
-	zbx_mi.port	= atoi(lm_cfg[4].def);
+	zbx_mi.port	= (unsigned int)atoi(lm_cfg[4].def);
 
 	execution_interval = atoi(lm_cfg[5].def);
 
@@ -696,7 +707,7 @@ int zbx_module_init_configure()
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_module_set_configure                                         *
+ * Function: zbx_module_get_configure                                         *
  *                                                                            *
  * Purpose:                                                                   *
  *                                                                            *
@@ -732,8 +743,9 @@ int zbx_module_init_configure()
  ******************************************************************************/
 int zbx_module_set_configure(char *c_line)
 {
-	int	i, i_len, ret;
+	int	i, ret;
 	char	c_param[STR_MAX], *str;
+	size_t	i_len;
 
 	memset(c_param, 0, STR_MAX);
 	for (i = 0; NULL != lm_cfg[i].parameter; i++) {
@@ -766,7 +778,7 @@ int zbx_module_set_configure(char *c_line)
 					zbx_mi.database = str;
 					break;
 				case 4:	/* Port */
-					zbx_mi.port = atoi(c_param);
+					zbx_mi.port = (unsigned int)atoi(c_param);
 					break;
 				case 5:	/* Interval */
 					execution_interval = atoi(c_param);
@@ -795,23 +807,23 @@ int zbx_module_set_configure(char *c_line)
  ******************************************************************************/
 int zbx_module_trim(char *s)
 {
-	int i,j;
+	int i, j;
 
 	if (s == NULL) return ZBX_MODULE_FAIL;
 
 	// delete last LF
-	i = strlen(s) - 1;
+	i = (int)strlen(s) - 1;
 	while (i >= 0 && s[i] == '\n' ) i--;
 	s[i+1] = '\0';
 
 	// delete last space
-	i = strlen(s) - 1;
+	i = (int)strlen(s) - 1;
 	while (i >= 0 && s[i] == ' ' ) i--;
 	s[i+1] = '\0';
 
 	// delete top space or tab
 	i = 0;
-	while (i < strlen(s) && (s[i] == ' ' || s[i] == '\t')) i++;
+	while (i < (int)strlen(s) && (s[i] == ' ' || s[i] == '\t')) i++;
 
 	// copy
 	j = 0;
