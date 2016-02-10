@@ -12,10 +12,10 @@
 **/
 
 # key word
-$KEYWORD={キーワード};
+$KEYWORD={繧ｭ繝ｼ繝ｯ繝ｼ繝厭;
 
 # Separator
-$SPL={セパレータ};
+$SPL={繧ｻ繝代Ξ繝ｼ繧ｿ};
 
 # log-file name
 $FILE="/var/log/zabbix/alert";
