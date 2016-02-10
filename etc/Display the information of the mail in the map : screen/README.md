@@ -40,6 +40,7 @@ AlertInfo.shは下記の用に書いてますので
     1)ホスト名　：{HOSTNAME}
 
 AlertInfo.shに{キーワード}{セパレータ}を下記のように指定してください。  
+
     # key word
     $KEYWORD="1)ホスト名";
      
